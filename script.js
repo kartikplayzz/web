@@ -71,12 +71,12 @@ if ("IntersectionObserver" in window) {
 // ── Compact music player: two songs + collapse ──
 const songs = [
   {
-    title: "Tum Hi Ho",
-    src: "https://open.spotify.com/embed/track/2tjWCe2W7sgvS3C8NHcdtI?utm_source=generator"
+    title: "Tere Vaaste",
+    src: "https://open.spotify.com/embed/track/3F3ZuXYFXGM1V6pk3b3zmi?utm_source=generator&autoplay=1"
   },
   {
-    title: "Kal Ho Na Ho",
-    src: "https://open.spotify.com/embed/track/4tMf9WEV9PMHzldKcZp0mO?utm_source=generator"
+    title: "Tum Hi Ho",
+    src: "https://open.spotify.com/embed/track/2tjWCe2W7sgvS3C8NHcdtI?utm_source=generator&autoplay=1"
   }
 ];
 
