@@ -68,7 +68,7 @@ if ("IntersectionObserver" in window) {
   flashCards.forEach((card) => card.classList.add("is-visible"));
 }
 
-// ── Compact music player: two songs + collapse ──
+// ── Music player: bubble → click to expand ──
 const songs = [
   {
     title: "Tere Vaaste",
@@ -82,12 +82,13 @@ const songs = [
 
 let currentSong = 0;
 
-const spotifyDock    = document.querySelector("#spotifyDock");
-const spotifyIframe  = document.querySelector("#spotifyIframe");
-const songTitle      = document.querySelector("#songTitle");
-const nextSongBtn    = document.querySelector("#nextSongBtn");
-const spotifyToggle  = document.querySelector("#spotifyToggle");
-const songCounter    = document.querySelector(".spotify-label span");
+const spotifyDock     = document.querySelector("#spotifyDock");
+const spotifyBubble   = document.querySelector("#spotifyBubble");
+const spotifyCloseBtn = document.querySelector("#spotifyCloseBtn");
+const spotifyIframe   = document.querySelector("#spotifyIframe");
+const songTitle       = document.querySelector("#songTitle");
+const songCounter     = document.querySelector("#songCounter");
+const nextSongBtn     = document.querySelector("#nextSongBtn");
 
 function loadSong(idx) {
   const song = songs[idx];
@@ -96,19 +97,26 @@ function loadSong(idx) {
   if (songCounter) songCounter.textContent = `Our sorry soundtrack · ${idx + 1}/${songs.length}`;
 }
 
+// Bubble click → open panel
+if (spotifyBubble) {
+  spotifyBubble.addEventListener("click", () => {
+    spotifyDock.classList.add("is-open");
+  });
+}
+
+// × button → close panel, show bubble again
+if (spotifyCloseBtn) {
+  spotifyCloseBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    spotifyDock.classList.remove("is-open");
+  });
+}
+
+// Next song button
 if (nextSongBtn) {
   nextSongBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     currentSong = (currentSong + 1) % songs.length;
     loadSong(currentSong);
-  });
-}
-
-if (spotifyToggle) {
-  spotifyToggle.addEventListener("click", (e) => {
-    e.stopPropagation();
-    spotifyDock.classList.toggle("is-collapsed");
-    spotifyToggle.textContent = spotifyDock.classList.contains("is-collapsed") ? "▼" : "▲";
-    spotifyToggle.title = spotifyDock.classList.contains("is-collapsed") ? "Expand" : "Collapse";
   });
 }

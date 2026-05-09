@@ -268,25 +268,32 @@
     </main>
 
     <aside class="spotify-dock" aria-label="Song for Anyaaaa" id="spotifyDock">
-      <div class="spotify-dock-header" id="spotifyHeader">
-        <span class="spotify-dock-icon">🎵</span>
-        <div class="spotify-label">
-          <strong id="songTitle">Tere Vaaste</strong>
-          <span>Our sorry soundtrack · 1/2</span>
-        </div>
-        <button class="spotify-next-btn" id="nextSongBtn" type="button" title="Next song">▶▶</button>
-        <button class="spotify-toggle-btn" id="spotifyToggle" type="button" title="Collapse">▲</button>
+      <!-- Small bubble (default) -->
+      <div class="spotify-bubble" id="spotifyBubble" title="Play music 🎵">
+        <span class="spotify-bubble-icon">🎵</span>
       </div>
-      <div class="spotify-iframe-wrap" id="spotifyIframeWrap">
-        <iframe
-          id="spotifyIframe"
-          title="Spotify song for Anyaaaa"
-          src="https://open.spotify.com/embed/track/3F3ZuXYFXGM1V6pk3b3zmi?utm_source=generator&autoplay=1"
-          width="100%"
-          height="80"
-          frameborder="0"
-          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-        ></iframe>
+      <!-- Expanded panel -->
+      <div class="spotify-panel" id="spotifyPanel">
+        <div class="spotify-panel-header">
+          <span class="spotify-panel-icon">🎵</span>
+          <div class="spotify-label">
+            <strong id="songTitle">Tere Vaaste</strong>
+            <span id="songCounter">Our sorry soundtrack · 1/2</span>
+          </div>
+          <button class="spotify-next-btn" id="nextSongBtn" type="button" title="Next song">▶▶</button>
+          <button class="spotify-close-btn" id="spotifyCloseBtn" type="button" title="Close">×</button>
+        </div>
+        <div class="spotify-iframe-wrap">
+          <iframe
+            id="spotifyIframe"
+            title="Spotify song for Anyaaaa"
+            src="https://open.spotify.com/embed/track/3F3ZuXYFXGM1V6pk3b3zmi?utm_source=generator&autoplay=1"
+            width="100%"
+            height="80"
+            frameborder="0"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          ></iframe>
+        </div>
       </div>
     </aside>
 
