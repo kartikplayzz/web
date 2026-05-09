@@ -71,12 +71,34 @@ if ("IntersectionObserver" in window) {
 // ── Music player: bubble → click to expand ──
 const songs = [
   {
-    title: "Tere Vaaste",
-    src: "https://open.spotify.com/embed/track/3F3ZuXYFXGM1V6pk3b3zmi?utm_source=generator&autoplay=1"
+    title: "Kinni Kinni",
+    type: "mp3",
+    src: "static/Kinni_Kinni_Ghost_320_Kbps.mp3"
   },
   {
-    title: "Tum Hi Ho",
-    src: "https://open.spotify.com/embed/track/2tjWCe2W7sgvS3C8NHcdtI?utm_source=generator&autoplay=1"
+    title: "Akhiyaan Gulaab",
+    type: "mp3",
+    src: "static/Akhiyaan_Gulaab_Teri_Baaton_Mein_Aisa_Uljha_Jiya_320_Kbps.mp3"
+  },
+  {
+    title: "Tu Jaane Na",
+    type: "mp3",
+    src: "static/Tu_Jaane_Na_Reprise_Ajab_Prem_Ki_Ghazab_Kahani_320_Kbps.mp3"
+  },
+  {
+    title: "Sahiba",
+    type: "mp3",
+    src: "static/Sahiba_Priya_Saraiya_320_Kbps.mp3"
+  },
+  {
+    title: "Tere Liye",
+    type: "mp3",
+    src: "static/Tere_Liye_Prince_320_Kbps.mp3"
+  },
+  {
+    title: "Aapka Hi Kehna",
+    type: "mp3",
+    src: "static/Aapka_Hi_Kehna_Banta_Keh_Do_Na_-_Majboor___Zoha_Waseem___Hindi.mp3"
   }
 ];
 
@@ -85,16 +107,32 @@ let currentSong = 0;
 const spotifyDock     = document.querySelector("#spotifyDock");
 const spotifyBubble   = document.querySelector("#spotifyBubble");
 const spotifyCloseBtn = document.querySelector("#spotifyCloseBtn");
-const spotifyIframe   = document.querySelector("#spotifyIframe");
+const audioEl         = document.querySelector("#spotifyIframe");
 const songTitle       = document.querySelector("#songTitle");
 const songCounter     = document.querySelector("#songCounter");
 const nextSongBtn     = document.querySelector("#nextSongBtn");
+const iframeWrap      = document.querySelector(".spotify-iframe-wrap");
 
 function loadSong(idx) {
   const song = songs[idx];
-  spotifyIframe.src = song.src;
   songTitle.textContent = song.title;
   if (songCounter) songCounter.textContent = `Our sorry soundtrack · ${idx + 1}/${songs.length}`;
+
+  if (song.type === "mp3") {
+    iframeWrap.innerHTML = `
+      <audio controls autoplay style="width:100%;border-radius:10px;accent-color:#e33d86;">
+        <source src="${song.src}" type="audio/mpeg" />
+      </audio>`;
+  } else {
+    iframeWrap.innerHTML = `
+      <iframe
+        title="Spotify"
+        src="${song.src}"
+        width="100%" height="80" frameborder="0"
+        style="border-radius:10px;display:block;"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+      </iframe>`;
+  }
 }
 
 // Bubble click → open panel
