@@ -70,36 +70,12 @@ if ("IntersectionObserver" in window) {
 
 // ── Music player: bubble → click to expand ──
 const songs = [
-  {
-    title: "Kinni Kinni",
-    type: "mp3",
-    src: "static/Kinni_Kinni_Ghost_320_Kbps.mp3"
-  },
-  {
-    title: "Akhiyaan Gulaab",
-    type: "mp3",
-    src: "static/Akhiyaan_Gulaab_Teri_Baaton_Mein_Aisa_Uljha_Jiya_320_Kbps.mp3"
-  },
-  {
-    title: "Tu Jaane Na",
-    type: "mp3",
-    src: "static/Tu_Jaane_Na_Reprise_Ajab_Prem_Ki_Ghazab_Kahani_320_Kbps.mp3"
-  },
-  {
-    title: "Sahiba",
-    type: "mp3",
-    src: "static/Sahiba_Priya_Saraiya_320_Kbps.mp3"
-  },
-  {
-    title: "Tere Liye",
-    type: "mp3",
-    src: "static/Tere_Liye_Prince_320_Kbps.mp3"
-  },
-  {
-    title: "Aapka Hi Kehna",
-    type: "mp3",
-    src: "static/Aapka_Hi_Kehna_Banta_Keh_Do_Na_-_Majboor___Zoha_Waseem___Hindi.mp3"
-  }
+  { title: "Kinni Kinni",     src: "static/Kinni_Kinni_Ghost_320_Kbps.mp3" },
+  { title: "Akhiyaan Gulaab", src: "static/Akhiyaan_Gulaab_Teri_Baaton_Mein_Aisa_Uljha_Jiya_320_Kbps.mp3" },
+  { title: "Tu Jaane Na",     src: "static/Tu_Jaane_Na_Reprise_Ajab_Prem_Ki_Ghazab_Kahani_320_Kbps.mp3" },
+  { title: "Sahiba",          src: "static/Sahiba_Priya_Saraiya_320_Kbps.mp3" },
+  { title: "Tere Liye",       src: "static/Tere_Liye_Prince_320_Kbps.mp3" },
+  { title: "Aapka Hi Kehna",  src: "static/Aapka_Hi_Kehna_Banta_Keh_Do_Na_-_Majboor___Zoha_Waseem___Hindi.mp3" }
 ];
 
 let currentSong = 0;
@@ -107,7 +83,6 @@ let currentSong = 0;
 const spotifyDock     = document.querySelector("#spotifyDock");
 const spotifyBubble   = document.querySelector("#spotifyBubble");
 const spotifyCloseBtn = document.querySelector("#spotifyCloseBtn");
-const audioEl         = document.querySelector("#spotifyIframe");
 const songTitle       = document.querySelector("#songTitle");
 const songCounter     = document.querySelector("#songCounter");
 const nextSongBtn     = document.querySelector("#nextSongBtn");
@@ -117,22 +92,10 @@ function loadSong(idx) {
   const song = songs[idx];
   songTitle.textContent = song.title;
   if (songCounter) songCounter.textContent = `Our sorry soundtrack · ${idx + 1}/${songs.length}`;
-
-  if (song.type === "mp3") {
-    iframeWrap.innerHTML = `
-      <audio controls autoplay style="width:100%;border-radius:10px;accent-color:#e33d86;">
-        <source src="${song.src}" type="audio/mpeg" />
-      </audio>`;
-  } else {
-    iframeWrap.innerHTML = `
-      <iframe
-        title="Spotify"
-        src="${song.src}"
-        width="100%" height="80" frameborder="0"
-        style="border-radius:10px;display:block;"
-        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
-      </iframe>`;
-  }
+  iframeWrap.innerHTML = `
+    <audio controls autoplay style="width:100%;border-radius:10px;accent-color:#e33d86;">
+      <source src="${song.src}" type="audio/mpeg" />
+    </audio>`;
 }
 
 // Bubble click → open panel
