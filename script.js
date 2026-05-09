@@ -92,17 +92,19 @@ const iframeWrap      = document.querySelector(".spotify-iframe-wrap");
 const audioPlayer = document.createElement("audio");
 audioPlayer.controls = true;
 audioPlayer.style.cssText = "width:100%;border-radius:10px;accent-color:#e33d86;display:block;";
-audioPlayer.src = songs[0].src;
 if (iframeWrap) iframeWrap.appendChild(audioPlayer);
 
+// Initialise first song metadata without force-playing (respects autoplay policy)
 function loadSong(idx) {
   const song = songs[idx];
-  songTitle.textContent = song.title;
+  if (songTitle)   songTitle.textContent   = song.title;
   if (songCounter) songCounter.textContent = `Our sorry soundtrack · ${idx + 1}/${songs.length}`;
   audioPlayer.src = song.src;
   audioPlayer.load();
-  audioPlayer.play().catch(() => {});
+  audioPlayer.play().catch(() => {});   // silently ignored if browser blocks autoplay
 }
+
+loadSong(0);
 
 // Bubble click → open panel + resume AudioContext
 if (spotifyBubble) {
