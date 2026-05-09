@@ -15,35 +15,25 @@ const surpriseLines = [
   "Expectations high rakho, main efforts usse bhi high rakhunga.",
   "Sorry bolna easy hai, par main prove karne ke liye ready hoon.",
 ];
-
 let currentLine = 0;
 
-if (forgiveBtn) {
-  forgiveBtn.addEventListener("click", () => {
-    if (typeof dialog.showModal === "function") { dialog.showModal(); return; }
-    alert("Anyaaaa, please smile? Bas ek chance de do.");
-  });
-}
+if (forgiveBtn) forgiveBtn.addEventListener("click", () => {
+  typeof dialog.showModal === "function"
+    ? dialog.showModal()
+    : alert("Anyaaaa, please smile? Bas ek chance de do.");
+});
+if (closeDialog) closeDialog.addEventListener("click", () => dialog.close());
+if (surpriseBtn) surpriseBtn.addEventListener("click", () => {
+  shayari.textContent = surpriseLines[currentLine];
+  currentLine = (currentLine + 1) % surpriseLines.length;
+});
 
-if (closeDialog) {
-  closeDialog.addEventListener("click", () => dialog.close());
-}
-
-if (surpriseBtn) {
-  surpriseBtn.addEventListener("click", () => {
-    shayari.textContent = surpriseLines[currentLine];
-    currentLine = (currentLine + 1) % surpriseLines.length;
-  });
-}
-
-// ── 3-D tilt (pointer events only, zero RAF cost) ────────────────────────────
+// ── Cinema 3-D tilt (no RAF — only fires on pointer move) ────────────────────
 if (cinemaStage) {
   cinemaStage.addEventListener("pointermove", (e) => {
-    const box = cinemaStage.getBoundingClientRect();
-    const x   = (e.clientX - box.left)  / box.width  - 0.5;
-    const y   = (e.clientY - box.top)   / box.height - 0.5;
-    cinemaStage.style.setProperty("--tilt-y", `${x *  5}deg`);
-    cinemaStage.style.setProperty("--tilt-x", `${y * -5}deg`);
+    const b = cinemaStage.getBoundingClientRect();
+    cinemaStage.style.setProperty("--tilt-y", `${((e.clientX - b.left)  / b.width  - 0.5) *  5}deg`);
+    cinemaStage.style.setProperty("--tilt-x", `${((e.clientY - b.top)   / b.height - 0.5) * -5}deg`);
   });
   cinemaStage.addEventListener("pointerleave", () => {
     cinemaStage.style.setProperty("--tilt-y", "0deg");
@@ -51,20 +41,75 @@ if (cinemaStage) {
   });
 }
 
-// ── Flash-card scroll reveal ──────────────────────────────────────────────────
+// ── Flash-card reveal ─────────────────────────────────────────────────────────
 if ("IntersectionObserver" in window) {
-  const cardObserver = new IntersectionObserver(
-    (entries) => entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("is-visible");
-        cardObserver.unobserve(entry.target);
-      }
-    }),
-    { threshold: 0.28 }
+  const cardObs = new IntersectionObserver(
+    (entries) => entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add("is-visible"); cardObs.unobserve(e.target); }
+    }), { threshold: 0.28 }
   );
-  flashCards.forEach((card) => cardObserver.observe(card));
+  flashCards.forEach(c => cardObs.observe(c));
 } else {
-  flashCards.forEach((card) => card.classList.add("is-visible"));
+  flashCards.forEach(c => c.classList.add("is-visible"));
+}
+
+// ── KEY FIX: Pause CSS animations for off-screen sections ────────────────────
+// content-visibility does NOT stop animations — we must do it manually.
+// CSS has animation-play-state: paused by default for these sections.
+// Adding .section-visible sets animation-play-state: running via CSS.
+const animatedSections = document.querySelectorAll(
+  ".sticker-section, .car-section, .photo-story-section"
+);
+if ("IntersectionObserver" in window && animatedSections.length) {
+  const sectionObs = new IntersectionObserver(
+    (entries) => entries.forEach(e => {
+      e.target.classList.toggle("section-visible", e.isIntersecting);
+    }),
+    { rootMargin: "100px 0px" }  // start a little before entering view
+  );
+  animatedSections.forEach(s => sectionObs.observe(s));
+}
+
+// ── VIDEO: pause/play background video based on visibility ───────────────────
+// The feature video (in hero stage) is a 2nd decode of same file — huge RAM+CPU.
+// Fix: share the same MediaStream from hero-video into the feature video slot,
+// or if browser doesn't support it, just pause the feature video.
+const heroBg      = document.querySelector(".hero-video");
+const featureVid  = document.querySelector(".hero-feature-video");
+
+if (heroBg && featureVid) {
+  // Try to share the stream (one decode, two displays) — works in modern browsers
+  try {
+    if (typeof heroBg.captureStream === "function") {
+      featureVid.srcObject = heroBg.captureStream();
+      featureVid.removeAttribute("src");
+      featureVid.muted = true;
+      featureVid.play().catch(() => {});
+    }
+    // Remove the <source> child so the browser doesn't double-load the file
+    featureVid.querySelectorAll("source").forEach(s => s.remove());
+  } catch (e) {
+    // Fallback: just mute + allow browser to play its own copy (still better than before)
+  }
+}
+
+// Pause BOTH videos when hero scrolls out of view — saves CPU when user scrolls down
+if (heroBg) {
+  const heroSection = document.querySelector(".hero");
+  const heroObs = new IntersectionObserver(
+    (entries) => {
+      const visible = entries[0].isIntersecting;
+      if (visible) {
+        heroBg.play().catch(() => {});
+        if (featureVid && featureVid.srcObject) featureVid.play().catch(() => {});
+      } else {
+        heroBg.pause();
+        if (featureVid) featureVid.pause();
+      }
+    },
+    { threshold: 0.05 }
+  );
+  if (heroSection) heroObs.observe(heroSection);
 }
 
 // ── Music player ──────────────────────────────────────────────────────────────
@@ -76,7 +121,6 @@ const songs = [
   { title: "Tere Liye",       src: "static/Tere_Liye_Prince_320_Kbps.mp3" },
   { title: "Aapka Hi Kehna",  src: "static/Aapka_Hi_Kehna_Banta_Keh_Do_Na_-_Majboor___Zoha_Waseem___Hindi.mp3" },
 ];
-
 let currentSong = 0;
 
 const spotifyDock     = document.querySelector("#spotifyDock");
@@ -87,22 +131,23 @@ const songCounter     = document.querySelector("#songCounter");
 const nextSongBtn     = document.querySelector("#nextSongBtn");
 const iframeWrap      = document.querySelector(".spotify-iframe-wrap");
 
-// Single persistent audio element — no inline HTML duplicate
-const audioPlayer     = document.createElement("audio");
-audioPlayer.controls  = true;
+// Single audio element injected by JS — no duplicate HTML audio element
+const audioPlayer        = document.createElement("audio");
+audioPlayer.controls     = true;
+audioPlayer.preload      = "none";   // Don't load any bytes until user opens player
 audioPlayer.style.cssText = "width:100%;border-radius:10px;accent-color:#e33d86;display:block;";
-audioPlayer.preload   = "none"; // don't touch network until user opens player
 if (iframeWrap) iframeWrap.appendChild(audioPlayer);
 
-// Show title without loading bytes
+// Show title metadata without loading audio
 if (songTitle)   songTitle.textContent   = songs[0].title;
 if (songCounter) songCounter.textContent = `Our sorry soundtrack · 1/${songs.length}`;
 
 function loadSong(idx) {
-  const song = songs[idx];
-  if (songTitle)   songTitle.textContent   = song.title;
+  const s = songs[idx];
+  if (songTitle)   songTitle.textContent   = s.title;
   if (songCounter) songCounter.textContent = `Our sorry soundtrack · ${idx + 1}/${songs.length}`;
-  audioPlayer.src = song.src;
+  audioPlayer.src = s.src;
+  audioPlayer.preload = "auto";
   audioPlayer.load();
   audioPlayer.play().catch(() => {});
 }
@@ -111,7 +156,7 @@ let playerOpened = false;
 if (spotifyBubble) {
   spotifyBubble.addEventListener("click", () => {
     spotifyDock.classList.add("is-open");
-    if (!playerOpened) { playerOpened = true; loadSong(0); } // lazy first load
+    if (!playerOpened) { playerOpened = true; loadSong(0); }   // lazy — no network hit until click
     if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
   });
 }
@@ -131,93 +176,84 @@ if (nextSongBtn) {
   });
 }
 
-// ── Web Audio + Beat rings (heavily optimised) ────────────────────────────────
+// ── Beat rings — Web Audio (CPU optimised) ────────────────────────────────────
 let audioCtx, analyser, dataArray, audioReady = false;
-const beatRings  = document.querySelectorAll(".beat-ring");
-const heroVideo  = document.querySelector(".hero-video");
-let   rafId      = null;
-let   frameCount = 0;
-let   lastTime   = 0;
+const beatRings = document.querySelectorAll(".beat-ring");
+const heroVideo = document.querySelector(".hero-video");
+let rafId = null, lastTime = 0, frameCount = 0;
 
 function setupAudioContext() {
   if (audioReady) return;
   try {
-    audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
-    analyser  = audioCtx.createAnalyser();
-    analyser.fftSize = 256;              // was 512; halves computation, same bass
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;                    // 256 not 512 — half data, same bass feel
     analyser.smoothingTimeConstant = 0.8;
     dataArray = new Uint8Array(analyser.frequencyBinCount);
     const src = audioCtx.createMediaElementSource(audioPlayer);
     src.connect(analyser);
     analyser.connect(audioCtx.destination);
     audioReady = true;
-  } catch (e) { /* not supported */ }
+  } catch (e) {}
 }
 
-// ~30 fps cap — was running uncapped 60 fps even when silent
-function animateBeat(timestamp) {
+function animateBeat(ts) {
   rafId = requestAnimationFrame(animateBeat);
-  if (timestamp - lastTime < 33) return;
-  lastTime = timestamp;
+  if (ts - lastTime < 34) return;             // cap at ~30 fps — was 60 fps
+  lastTime = ts;
   if (!analyser) return;
 
   analyser.getByteFrequencyData(dataArray);
 
+  // Bass: first 6 bins only
   let bass = 0;
-  for (let i = 0; i < 6; i++) bass += dataArray[i]; // fewer bins, same feel
+  for (let i = 0; i < 6; i++) bass += dataArray[i];
   bass = Math.min(bass / 6 / 255, 1);
 
+  // Volume: sample every 2nd bin
   let vol = 0;
-  for (let i = 0; i < dataArray.length; i += 2) vol += dataArray[i]; // every other bin
-  vol = Math.min(vol / (dataArray.length / 2) / 255, 1);
+  for (let i = 0; i < dataArray.length; i += 2) vol += dataArray[i];
+  vol = Math.min(vol / (dataArray.length * 0.5) / 255, 1);
 
   frameCount++;
 
   beatRings.forEach((ring, i) => {
-    const phase     = ((frameCount / 45) + i * (1 / beatRings.length)) % 1;
-    const intensity = 0.5 + bass * 1.8 + vol * 0.5;
-    const scale     = 0.15 + phase * intensity * 3.5;
-    const opacity   = Math.max(0, (1 - phase) * (0.25 + bass * 0.75));
-    ring.style.transform   = `translate(-50%, -50%) scale(${scale})`;
+    const phase   = ((frameCount / 45) + i / beatRings.length) % 1;
+    const scale   = 0.15 + phase * (0.5 + bass * 1.8 + vol * 0.5) * 3.5;
+    const opacity = Math.max(0, (1 - phase) * (0.25 + bass * 0.75));
+    const hue     = 330 + i * 12;
+    ring.style.transform   = `translate(-50%,-50%) scale(${scale})`;
     ring.style.opacity     = opacity;
-    const hue = 330 + i * 12;
-    ring.style.borderColor = `hsla(${hue}, 80%, 65%, ${opacity})`;
-    ring.style.boxShadow   = `0 0 ${12 + bass * 28}px hsla(${hue}, 90%, 60%, ${opacity * 0.6})`;
+    ring.style.borderColor = `hsla(${hue},80%,65%,${opacity})`;
+    ring.style.boxShadow   = `0 0 ${12 + bass * 28}px hsla(${hue},90%,60%,${opacity * 0.6})`;
   });
 
-  // Only touch heroVideo DOM when there's actual bass — skips most frames
+  // Only update heroVideo DOM when there's actual bass energy
   if (heroVideo && bass > 0.12) {
     heroVideo.style.transform = `scale(${1.04 + bass * 0.05})`;
     heroVideo.style.filter    = `saturate(${1.18 + bass * 0.5}) contrast(${1.05 + bass * 0.1}) blur(${Math.max(0, 1 - bass * 2)}px)`;
   }
 }
 
-function startBeat() {
-  if (!rafId && audioReady) rafId = requestAnimationFrame(animateBeat);
-}
-
-function stopBeat() {
+function startBeat() { if (!rafId && audioReady) rafId = requestAnimationFrame(animateBeat); }
+function stopBeat()  {
   if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-  beatRings.forEach((r) => {
-    r.style.opacity   = 0;
-    r.style.transform = "translate(-50%,-50%) scale(0)";
-  });
+  beatRings.forEach(r => { r.style.opacity = 0; r.style.transform = "translate(-50%,-50%) scale(0)"; });
 }
 
-// RAF only runs while audio is playing
-audioPlayer.addEventListener("play", () => {
-  setupAudioContext();
-  if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
-  startBeat();
-});
+audioPlayer.addEventListener("play",  () => { setupAudioContext(); if (audioCtx?.state === "suspended") audioCtx.resume(); startBeat(); });
 audioPlayer.addEventListener("pause", stopBeat);
 audioPlayer.addEventListener("ended", stopBeat);
 
-// Kill all JS work when tab goes to background — biggest single win on laptops
+// Pause all heavy work when tab goes background — biggest single win on laptops
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     stopBeat();
-  } else if (!audioPlayer.paused && audioReady) {
-    startBeat();
+    // Also pause videos to free GPU decode when tab is backgrounded
+    heroBg?.pause();
+    featureVid?.pause();
+  } else {
+    if (!audioPlayer.paused && audioReady) startBeat();
+    heroBg?.play().catch(() => {});
   }
 });

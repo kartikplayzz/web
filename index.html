@@ -10,7 +10,7 @@
   <body>
     <main class="page-shell">
       <section class="hero" aria-label="Dil se apology for Anyaaaa">
-        <video class="hero-video" autoplay muted loop playsinline aria-hidden="true" preload="none" disablepictureinpicture>
+        <video class="hero-video" autoplay muted loop playsinline aria-hidden="true" preload="none">
           <source src="static/BG.mp4" type="video/mp4" />
         </video>
         <div class="petal-layer" aria-hidden="true">
@@ -43,7 +43,7 @@
         <div class="hero-video-stage" aria-label="Animated background video preview">
           <span class="video-ring ring-one" aria-hidden="true"></span>
           <span class="video-ring ring-two" aria-hidden="true"></span>
-          <video class="hero-feature-video" autoplay muted loop playsinline preload="none" disablepictureinpicture>
+          <video class="hero-feature-video" autoplay muted loop playsinline preload="metadata">
             <source src="static/BG.mp4" type="video/mp4" />
           </video>
           <div class="video-stage-caption">
@@ -86,7 +86,7 @@
           </p>
         </div>
         <div class="sticker-stage">
-          <img
+          <img loading="lazy"
             class="sorry-sticker"
             src="static/sorry-sticker.png"
             alt="I am sorry, please forgive me sticker"
@@ -107,7 +107,7 @@
           </p>
         </div>
         <div class="car-frame" aria-hidden="true">
-          <img src="static/CAR.jpg" alt="" />
+          <img loading="lazy" src="static/CAR.jpg" alt="" />
           <span class="road-light light-one"></span>
           <span class="road-light light-two"></span>
           <span class="car-heart heart-one"></span>
@@ -131,7 +131,7 @@
           <span class="cinema-glow glow-two" aria-hidden="true"></span>
 
           <article class="real-photo photo-girl">
-            <img
+            <img loading="lazy"
               id="herPhotoPreview"
               src="static/photo-her.png"
               alt="Her photo"
@@ -151,7 +151,7 @@
           </div>
 
           <article class="real-photo photo-boy">
-            <img
+            <img loading="lazy"
               id="myPhotoPreview"
               src="static/photo-blue-boy.png"
               alt="My apology photo"

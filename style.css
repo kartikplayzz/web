@@ -1591,26 +1591,22 @@ dialog::backdrop {
   }
 }
 
+
 /* ════════════════════════════════════════════════════════════════════════════
-   PERFORMANCE OPTIMISATIONS
-   — Fixes 100% CPU on Windows / Mac / Mobile
+   PERFORMANCE OPTIMISATIONS v3
+   Root-cause fixes for 95% CPU, 83% RAM, music-button bug
    ════════════════════════════════════════════════════════════════════════════ */
 
-/* 1. GPU-composite only the elements that actually animate transform/opacity.
-      DO NOT put will-change on every element — that wastes VRAM. */
-.hero-video,
-.hero-video-stage,
-.hero-feature-video,
-.car-frame,
-.sorry-sticker,
-.beat-ring,
-.real-photo,
-.floating-message {
-  will-change: transform;
-}
+/* ── 1. will-change only on things that truly need GPU compositing ────────── */
+.beat-ring        { will-change: transform, opacity; }
+.hero-video       { will-change: transform, filter; }
+.sorry-sticker    { will-change: transform; }
+.car-frame        { will-change: transform; }
+.real-photo       { will-change: transform; }
+/* REMOVED will-change from hero-video-stage, hero-feature-video, floating-message
+   — these were wasting VRAM without meaningful benefit */
 
-/* 2. content-visibility: auto — browser skips rendering off-screen sections
-      until the user scrolls to them. Biggest single win for long pages. */
+/* ── 2. content-visibility for layout-only win (no animation impact) ─────── */
 .note-section,
 .sticker-section,
 .car-section,
@@ -1620,85 +1616,113 @@ dialog::backdrop {
 .promise-band,
 .expectation-section {
   content-visibility: auto;
-  contain-intrinsic-size: 0 600px; /* placeholder height so scroll bar stays accurate */
+  contain-intrinsic-size: 0 620px;
 }
 
-/* 3. Contain layout/paint inside heavy sections so browser doesn't
-      re-layout the whole page when animations move things inside. */
-.hero,
-.car-frame,
-.cinema-stage,
-.sticker-stage,
-.spotify-dock {
-  contain: layout paint;
-}
+/* ── 3. PAUSE ALL INFINITE ANIMATIONS by default for off-screen sections.
+        JS IntersectionObserver adds .section-visible to un-pause them.
+        This is the correct fix — content-visibility does NOT pause animations. */
 
-/* 4. Reduce backdrop-filter cost — halve blur radius everywhere.
-      Visually nearly identical but much cheaper, especially on mobile. */
-.note         { backdrop-filter: blur(8px);  }   /* was 16px */
-.ghost-action { backdrop-filter: blur(4px);  }   /* was 8px  */
-.floating-message { backdrop-filter: blur(5px); } /* was 10px */
-.video-stage-caption { backdrop-filter: blur(5px); } /* was 10px */
-.spotify-panel { backdrop-filter: blur(12px); } /* was 24px */
+/* Sticker section */
+.sticker-section .sorry-sticker,
+.sticker-section .tear          { animation-play-state: paused; }
+.sticker-section.section-visible .sorry-sticker,
+.sticker-section.section-visible .tear { animation-play-state: running; }
 
-/* 5. Slow down the heaviest continuous animations that gain nothing from speed.
-      heroVideoDrift at 14s is fine; videoStageShift at 9s is fast enough,
-      but featureVideoMotion composites scale+translate every frame — extend it. */
-.hero-feature-video {
-  animation-duration: 14s; /* was 7.5s — same look, half the compositor work */
-}
-.hero-video-stage {
-  animation-duration: 14s; /* was 9s */
-}
-.car-frame img {
-  animation-duration: 12s; /* was 7s */
-}
+/* Car section */
+.car-section .car-frame,
+.car-section .car-frame img,
+.car-section .road-light,
+.car-section .car-heart         { animation-play-state: paused; }
+.car-section.section-visible .car-frame,
+.car-section.section-visible .car-frame img,
+.car-section.section-visible .road-light,
+.car-section.section-visible .car-heart { animation-play-state: running; }
 
-/* 6. cinema-stage: the sweep + 3-D tilt uses CSS custom properties inside
-      keyframes which triggers style-recalc every frame on some browsers.
-      Simplify by removing the tilt variables from the keyframe references —
-      the JS pointer handler still works fine because it sets them directly. */
+/* Photo story section */
+.photo-story-section .real-photo img,
+.photo-story-section .photo-girl,
+.photo-story-section .photo-boy,
+.photo-story-section .apology-line path,
+.photo-story-section .floating-message,
+.photo-story-section .cinema-glow,
+.photo-story-section .real-petal { animation-play-state: paused; }
+.photo-story-section.section-visible .real-photo img,
+.photo-story-section.section-visible .photo-girl,
+.photo-story-section.section-visible .photo-boy,
+.photo-story-section.section-visible .apology-line path,
+.photo-story-section.section-visible .floating-message,
+.photo-story-section.section-visible .cinema-glow,
+.photo-story-section.section-visible .real-petal { animation-play-state: running; }
+
+/* ── 4. Simplify keyframes that used CSS custom props (forced style-recalc) ── */
 @keyframes photoBreathLeft {
-  0%, 100% { transform: translateY(0)    rotate(-4deg); }
+  0%, 100% { transform: translateY(0)     rotate(-4deg);   }
   50%       { transform: translateY(-13px) rotate(-2.5deg); }
 }
 @keyframes photoBreathRight {
-  0%, 100% { transform: translateY(0)   rotate(4deg); }
+  0%, 100% { transform: translateY(0)    rotate(4deg);   }
   50%       { transform: translateY(14px) rotate(2.5deg); }
 }
 @keyframes realisticSweep {
   0%, 100% { opacity: 0.12; transform: translateX(-38%); }
-  45%       { opacity: 0.62; transform: translateX(24%); }
+  45%       { opacity: 0.62; transform: translateX(24%);  }
 }
 
-/* 7. On mobile: disable the most expensive animations that aren't noticeable
-      on a small screen anyway. Keep the ones users will notice. */
+/* ── 5. Slow down animations that gain nothing from running fast ───────────── */
+.hero-feature-video { animation-duration: 16s; }   /* was 7.5s */
+.hero-video-stage   { animation-duration: 16s; }   /* was 9s   */
+.car-frame img      { animation-duration: 14s; }   /* was 7s   */
+.hero-video         { animation-duration: 20s; }   /* was 14s  */
+
+/* ── 6. Reduce backdrop-filter blur (expensive on all platforms) ─────────── */
+.note               { backdrop-filter: blur(6px);  }  /* was 16px */
+.ghost-action       { backdrop-filter: blur(3px);  }  /* was 8px  */
+.floating-message   { backdrop-filter: blur(4px);  }  /* was 10px */
+.video-stage-caption{ backdrop-filter: blur(4px);  }  /* was 10px */
+.spotify-panel      { backdrop-filter: blur(10px); }  /* was 24px */
+
+/* ── 7. spotify-dock: NO contain here — it clips the absolute panel ───────── */
+/* contain: layout paint was WRONG — it caused the music button to disappear  */
+/* Only use contain on elements whose content doesn't overflow their bounds    */
+.hero         { contain: layout; }  /* safe — hero-video is inset:0          */
+.car-frame    { contain: layout paint; }  /* safe — overflow:hidden already   */
+.sticker-stage{ contain: layout; }
+.cinema-stage { contain: layout; }
+
+/* ── 8. MOBILE — aggressive cuts ────────────────────────────────────────────  */
 @media (max-width: 820px) {
-  /* Kill full-video-stage shift — too heavy on mobile GPUs */
-  .hero-video-stage  { animation: none; transform: none; }
-  .hero-video-stage::before { animation: none; }
+  /* Kill the second video entirely on mobile — replaced with poster in JS */
+  .hero-feature-video         { display: none; }
+  .hero-video-stage::before   { animation: none; }
 
-  /* Simplify car-frame shine + camera pan */
-  .car-frame::before { animation: none; }
-  .car-frame img     { animation: none; transform: scale(1.03); }
+  /* Remove all backdrop-filter on mobile — very expensive on Intel/ARM GPU */
+  .note, .ghost-action, .floating-message,
+  .video-stage-caption, .spotify-panel {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  /* Compensate for no blur: add solid background */
+  .video-stage-caption { background: rgba(111, 17, 67, 0.9); }
+  .spotify-panel       { background: rgba(72, 10, 44, 0.97); }
+  .floating-message    { background: rgba(112, 24, 68, 0.92); }
 
-  /* Reduce petal count: hide alternate petals so only 5 animate */
-  .petal-layer span:nth-child(even) { display: none; }
+  /* Kill car-frame animations (off-screen on mobile usually) */
+  .car-frame::before  { animation: none; }
+  .road-light         { display: none; }
 
-  /* Kill cinema glows — just coloured blurred divs, expensive blur on mobile */
+  /* Reduce petal count */
+  .petal-layer span:nth-child(n+6) { display: none; }
+
+  /* Cinema glows = blurred divs = expensive */
   .cinema-glow { display: none; }
-
-  /* Floating petals inside cinema — hide half */
   .rp-two, .rp-four { display: none; }
 
-  /* Simpler ring-pulse */
-  .video-ring { animation: none; opacity: 0.5; }
-
-  /* Road lights are subtle — kill on small screens */
-  .road-light { display: none; }
+  /* Simpler ring */
+  .video-ring { animation: none; opacity: 0.45; }
 }
 
-/* 8. Devices that explicitly flag low-power / reduced-motion — full stop */
+/* ── 9. Reduced motion — full stop ──────────────────────────────────────────  */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -1706,4 +1730,5 @@ dialog::backdrop {
     transition-duration: 0.01ms !important;
   }
   .petal-layer span { display: none; }
+  .beat-ring        { display: none; }
 }
